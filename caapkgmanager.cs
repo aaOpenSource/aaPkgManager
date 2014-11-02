@@ -29,6 +29,9 @@ namespace aaPkgManager
         // First things first, setup logging 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
+        /// <summary>
+        /// Default Constructor
+        /// </summary>
         public Manager()
         {
             log.Debug("");
@@ -36,6 +39,9 @@ namespace aaPkgManager
             this.Initialize();
         }
 
+        /// <summary>
+        /// Private initialization
+        /// </summary>
         private void Initialize()
         {
             try
@@ -81,9 +87,9 @@ namespace aaPkgManager
                 ciAAPKG.PackFiles(null, SourceFiles, null, CompressionLevel, null);
 
             }
-            catch (Exception ex)
+            catch
             {
-                throw (ex);
+                throw;
             }
         }
 
@@ -143,9 +149,9 @@ namespace aaPkgManager
                 System.IO.File.Delete(file1Path);
 
             }
-            catch (Exception ex)
+            catch
             {
-                throw ex;
+                throw;
             }
         }
 
@@ -175,11 +181,64 @@ namespace aaPkgManager
                 // Return the actual path used
                 return tempPath;
             }
-            catch (Exception ex)
+            catch
             {
-                throw ex;
+                throw;
             }
 
+        }
+
+        /// <summary>
+        /// Get the manifest as a string
+        /// </summary>
+        /// <param name="AAPKGFilePath"></param>
+        /// <returns></returns>
+        /// TODO: Use in memory instead of extracting to disk then cleaning up
+        public string GetManifestAsString(string AAPKGFilePath)
+        {
+            string workingPath;
+            string manifestString;
+
+            try
+            {
+                // Unpack the files
+                workingPath = this.UnpackAAPKG(AAPKGFilePath);
+
+                // Get the XML from the manifest file
+                manifestString = File.ReadAllText(workingPath + "\\manifest.xml");
+
+                //Delete the folder
+                Directory.Delete(workingPath, true);
+
+                //return the result
+                return manifestString;
+
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Get the manifest as an XML doc
+        /// </summary>
+        /// <param name="AAPKGFilePath"></param>
+        /// <returns></returns>
+        public XmlDocument GetManifestasXML(string AAPKGFilePath)
+        {
+            XmlDocument returnXML;
+
+            try
+            {
+                returnXML = new XmlDocument();
+                returnXML.LoadXml(this.GetManifestAsString(AAPKGFilePath));
+                return returnXML;
+            }
+            catch
+            {
+                throw;
+            }
         }
 
         /// <summary>
