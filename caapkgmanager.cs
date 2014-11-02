@@ -13,6 +13,10 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath; // for XPathSelectElements
 using System.Diagnostics;
+using System.Reflection;
+
+
+[assembly: log4net.Config.XmlConfigurator(ConfigFile = "log.config", Watch = true)]
 
 namespace aaPkgManager
 {
@@ -27,10 +31,28 @@ namespace aaPkgManager
 
         public Manager()
         {
-            // Start with the logging
-            log4net.Config.BasicConfigurator.Configure();
+            log.Debug("");
+            log.Info("Creating Package Manager");
+            this.Initialize();
+        }
 
-            log.Info("Instantiated aaPkgManager.Manager");
+        private void Initialize()
+        {
+            try
+            {
+                log.Debug("");
+
+                // Setup logging
+                log4net.Config.BasicConfigurator.Configure();
+
+            }
+
+            catch
+            {
+                throw;
+            }
+
+
         }
 
         /// <summary>
@@ -41,9 +63,11 @@ namespace aaPkgManager
         public void CreateAAPKG(string SourceDirectory, string AAPKGFilename, Microsoft.Deployment.Compression.CompressionLevel CompressionLevel = Microsoft.Deployment.Compression.CompressionLevel.Normal)
         {
             string file1Path;
-            
+
             try
             {
+                log.Debug("");
+
                 file1Path = Path.GetTempPath() + "file1.cab";
 
                 // Create the File1.cab file from the directory containing all of the source files
@@ -54,10 +78,10 @@ namespace aaPkgManager
                 List<String> SourceFiles = new List<String>();
                 SourceFiles.Add(file1Path);
                 CabInfo ciAAPKG = new CabInfo(AAPKGFilename);
-                ciAAPKG.PackFiles(null,SourceFiles,null,CompressionLevel,null);
+                ciAAPKG.PackFiles(null, SourceFiles, null, CompressionLevel, null);
 
             }
-            catch (Exception ex)                
+            catch (Exception ex)
             {
                 throw (ex);
             }
@@ -70,17 +94,20 @@ namespace aaPkgManager
         /// <param name="DestinationDirectory"></param>
         public void UnpackAAPKG(string AAPKGFilePath, string DestinationDirectory)
         {
+
             string file1Path;
             string outerUnpackPath;
 
             try
             {
+                log.Debug("");
+
                 // Calculate our outer unpack path
                 outerUnpackPath = Path.GetTempPath();
 
                 // Go ahead and setup file1 path using the temp folder
                 file1Path = outerUnpackPath + "file1.cab";
-                
+
                 try
                 {
                     // Remove the outer AAPKG wrapper to reveal the inner file1.cab
@@ -89,7 +116,7 @@ namespace aaPkgManager
                         zip1.ExtractAll(outerUnpackPath, ExtractExistingFileAction.OverwriteSilently);
                     }
                 }
-                catch(Ionic.Zip.ZipException)
+                catch (Ionic.Zip.ZipException)
                 {
                     // If we have an error reading as a zip then try to unpack as a CAB
                     CabInfo ci = new CabInfo(AAPKGFilePath);
@@ -111,12 +138,12 @@ namespace aaPkgManager
                     CabInfo ci = new CabInfo(file1Path);
                     ci.Unpack(DestinationDirectory);
                 }
-            
+
                 // Delete the file1.cab
                 System.IO.File.Delete(file1Path);
 
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw ex;
             }
@@ -128,17 +155,20 @@ namespace aaPkgManager
         /// <param name="AAPKGFileName"></param>
         /// <returns></returns>
         public string UnpackAAPKG(string AAPKGFilePath)
-        {            
+        {
             string tempPath;
 
             try
             {
+
+                log.Debug("");
+
                 // First extract the objects to a temporary path
                 tempPath = Path.GetTempPath() + System.Guid.NewGuid();
 
                 // Delete the folder if it already exists.. unlikely since we are using a GUID but just to be safe
                 if (System.IO.Directory.Exists(tempPath)) { System.IO.Directory.Delete(tempPath, true); }
-                
+
                 // Perform the unpack
                 this.UnpackAAPKG(AAPKGFilePath, tempPath);
 
@@ -162,11 +192,15 @@ namespace aaPkgManager
         /// <param name="CompressionLevel"></param>
         public void MinifyAAPKG(string AAPKGFilePath, List<String> ObjectsToKeep = null, bool ExcludeAAPDFFiles = true, string NewAAPKGFileName = "", Microsoft.Deployment.Compression.CompressionLevel CompressionLevel = Microsoft.Deployment.Compression.CompressionLevel.Normal)
         {
+
             string workingPath;
             string manifestFileName;
-            
+
             try
             {
+
+                log.Debug("");
+
                 // Extract to a temporary location
                 workingPath = this.UnpackAAPKG(AAPKGFilePath);
 
@@ -184,13 +218,13 @@ namespace aaPkgManager
 
                 // If the Objects to Keep list is not null then remove items based on the list
                 if (ObjectsToKeep.Count() > 0)
-                { 
+                {
                     //Remove items from aaPKG file based on the objects to keep list that has been passed
-                   this.RemoveItemsFromUnpackedFiles(workingPath, ref xmanifestDoc, ObjectsToKeep);
+                    this.RemoveItemsFromUnpackedFiles(workingPath, ref xmanifestDoc, ObjectsToKeep);
                 }
-  
+
                 // Remove the aaPDF files if required
-                if(ExcludeAAPDFFiles){this.RemoveAAPDFFilesFromUnpackedFiles(workingPath,ref xmanifestDoc);}
+                if (ExcludeAAPDFFiles) { this.RemoveAAPDFFilesFromUnpackedFiles(workingPath, ref xmanifestDoc); }
 
                 // Save the doc back
                 xmanifestDoc.Save(manifestFileName);
@@ -202,7 +236,7 @@ namespace aaPkgManager
                 }
 
                 // Repackage the AAPKG
-                this.CreateAAPKG(workingPath, NewAAPKGFileName,CompressionLevel);
+                this.CreateAAPKG(workingPath, NewAAPKGFileName, CompressionLevel);
 
                 //Delete the working path
                 if (System.IO.Directory.Exists(workingPath)) { System.IO.Directory.Delete(workingPath, true); }
@@ -223,6 +257,8 @@ namespace aaPkgManager
         {
             try
             {
+                log.Debug("");
+
                 this.MinifyAAPKG(AAPKGFilePath, null, true, NewAAPKGFileName, CompressionLevel);
             }
             catch
@@ -244,6 +280,8 @@ namespace aaPkgManager
 
             try
             {
+                log.Debug("");
+
                 // Extract to a temporary location
                 workingPath = this.UnpackAAPKG(AAPKGFilePath);
 
@@ -290,6 +328,8 @@ namespace aaPkgManager
 
             try
             {
+                log.Debug("");
+
                 // Extract to a temporary location
                 workingPath = this.UnpackAAPKG(AAPKGFilePath);
 
@@ -330,38 +370,39 @@ namespace aaPkgManager
         /// <param name="xmanifestDoc"></param>
         private void RemoveAAPDFFilesFromUnpackedFiles(string workingPath, ref XDocument xmanifestDoc)
         {
-
             string dirToDelete;
 
             try
             {
-                    // Loop through all of the AAPDF files in the folder and create a 0 size file in it's place.
-                    // We have to do this b/c the import will fail if the file is missing
-                    // However, if the file is present but the importer never reads it then the file passes
-                    string[] aaPDFFiles;
+                log.Debug("");
 
-                    aaPDFFiles = Directory.GetFiles(workingPath, "*.aapdf");
+                // Loop through all of the AAPDF files in the folder and create a 0 size file in it's place.
+                // We have to do this b/c the import will fail if the file is missing
+                // However, if the file is present but the importer never reads it then the file passes
+                string[] aaPDFFiles;
 
-                    //Loop through the filenames and create a blank file, overwriting the aaPDF in place
-                    foreach (string filename in aaPDFFiles)
-                    {
-                        // Get the XML node that references this aaPDF File
-                        var pdfElement = xmanifestDoc.XPathSelectElement("//template[@file_name=\"" + Path.GetFileName(filename) + "\"]");
+                aaPDFFiles = Directory.GetFiles(workingPath, "*.aapdf");
 
-                        // Crate the blank file in place of the aaPDF File
-                        File.Create(filename).Close();
+                //Loop through the filenames and create a blank file, overwriting the aaPDF in place
+                foreach (string filename in aaPDFFiles)
+                {
+                    // Get the XML node that references this aaPDF File
+                    var pdfElement = xmanifestDoc.XPathSelectElement("//template[@file_name=\"" + Path.GetFileName(filename) + "\"]");
 
-                        //Clear the .txt file
-                        File.Create(workingPath + "\\" + pdfElement.Attribute("tag_name").Value + ".txt").Close();
+                    // Crate the blank file in place of the aaPDF File
+                    File.Create(filename).Close();
 
-                        // Set the version to -1 to make sure it doesn't get imported
-                        pdfElement.SetAttributeValue("config_version", "-1");
+                    //Clear the .txt file
+                    File.Create(workingPath + "\\" + pdfElement.Attribute("tag_name").Value + ".txt").Close();
 
-                        //Delete the help folder
-                        dirToDelete = workingPath + "\\" + pdfElement.Attribute("gobjectid").Value;
-                        if (System.IO.Directory.Exists(dirToDelete)) { System.IO.Directory.Delete(dirToDelete, true); }
+                    // Set the version to -1 to make sure it doesn't get imported
+                    pdfElement.SetAttributeValue("config_version", "-1");
 
-                    }
+                    //Delete the help folder
+                    dirToDelete = workingPath + "\\" + pdfElement.Attribute("gobjectid").Value;
+                    if (System.IO.Directory.Exists(dirToDelete)) { System.IO.Directory.Delete(dirToDelete, true); }
+
+                }
 
             }
             catch
@@ -380,6 +421,8 @@ namespace aaPkgManager
         {
             try
             {
+                log.Debug("");
+
                 //Use a compound query for templates and instances
                 this.RemoveItemsFromUnpackedFilesByXPath(workingPath, ref xmanifestDoc, ObjectsToKeep, "//derived_templates/template | //derived_instances/instance");
             }
@@ -399,6 +442,8 @@ namespace aaPkgManager
         {
             try
             {
+                log.Debug("");
+
                 //Templates
                 this.RemoveItemsFromUnpackedFilesByXPath(workingPath, ref xmanifestDoc, ObjectsToKeep, "//derived_templates/template");
             }
@@ -407,7 +452,7 @@ namespace aaPkgManager
                 throw;
             }
         }
-        
+
         /// <summary>
         /// Remove only instances from unpacked files, based on list of objects
         /// </summary>
@@ -418,6 +463,8 @@ namespace aaPkgManager
         {
             try
             {
+                log.Debug("");
+
                 //Templates
                 this.RemoveItemsFromUnpackedFilesByXPath(workingPath, ref xmanifestDoc, ObjectsToKeep, "//derived_instances/instance");
             }
@@ -434,10 +481,12 @@ namespace aaPkgManager
         /// <param name="xmanifestDoc"></param>
         /// <param name="ObjectsToKeep"></param>
         /// <param name="XPathQuery"></param>
-        private void RemoveItemsFromUnpackedFilesByXPath(string workingPath,ref XDocument xmanifestDoc, List<String> ObjectsToKeep, string XPathQuery)
+        private void RemoveItemsFromUnpackedFilesByXPath(string workingPath, ref XDocument xmanifestDoc, List<String> ObjectsToKeep, string XPathQuery)
         {
             try
             {
+                log.Debug("");
+
                 //Templates
                 var elements = xmanifestDoc.XPathSelectElements(XPathQuery);
 
@@ -474,6 +523,8 @@ namespace aaPkgManager
         {
             try
             {
+                log.Debug("");
+
                 // Zero out the file and immediately close
                 File.Create(workingPath + "\\" + gObjectID + ".txt").Close();
 
@@ -492,7 +543,7 @@ namespace aaPkgManager
         //    string workingPath;                        
         //    string manifestFileName;
         //    string gobjectidOriginal;
-            
+
         //    try
         //    {
         //        // Extract to a temporary location
@@ -503,13 +554,13 @@ namespace aaPkgManager
 
         //        // Load the Manifest File
         //        XDocument xmanifestDoc = XDocument.Load(manifestFileName);
-                
+
         //        // Find the specific instance we are looking for
         //        var instanceElement = xmanifestDoc.XPathSelectElement("//instance[@tag_name='" + OldName + "']");
-                
+
         //        // Change the tag_name
         //        instanceElement.SetAttributeValue("tag_name", NewName);
-                
+
         //       // Capture the original gobjectid 
         //        gobjectidOriginal = instanceElement.Attributes("gobjectid").Single().Value;
 
