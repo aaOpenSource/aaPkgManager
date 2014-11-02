@@ -14,10 +14,11 @@ using System.Xml.Linq;
 using System.Xml.XPath; // for XPathSelectElements
 using System.Diagnostics;
 
-
-
 namespace aaPkgManager
 {
+    /// <summary>
+    /// Default constructor
+    /// </summary>
     public class Manager
     {
 
@@ -322,8 +323,6 @@ namespace aaPkgManager
             }
         }
 
-
-
         /// <summary>
         /// Remove the AAPDF files from the Manifest and File Set
         /// </summary>
@@ -371,6 +370,12 @@ namespace aaPkgManager
             }
         }
 
+        /// <summary>
+        /// Remove any item, Template or Instance, from unpbacked files based on the list of objects
+        /// </summary>
+        /// <param name="workingPath"></param>
+        /// <param name="xmanifestDoc"></param>
+        /// <param name="ObjectsToKeep"></param>
         private void RemoveItemsFromUnpackedFiles(string workingPath, ref XDocument xmanifestDoc, List<String> ObjectsToKeep)
         {
             try
@@ -384,6 +389,12 @@ namespace aaPkgManager
             }
         }
 
+        /// <summary>
+        /// Remove only templates from unpacked files, based on list of objects
+        /// </summary>
+        /// <param name="workingPath"></param>
+        /// <param name="xmanifestDoc"></param>
+        /// <param name="ObjectsToKeep"></param>
         private void RemoveTemplatesFromUnpackedFiles(string workingPath, ref XDocument xmanifestDoc, List<String> ObjectsToKeep)
         {
             try
@@ -397,6 +408,12 @@ namespace aaPkgManager
             }
         }
         
+        /// <summary>
+        /// Remove only instances from unpacked files, based on list of objects
+        /// </summary>
+        /// <param name="workingPath"></param>
+        /// <param name="xmanifestDoc"></param>
+        /// <param name="ObjectsToKeep"></param>
         private void RemoveInstancesFromUnpackedFiles(string workingPath, ref XDocument xmanifestDoc, List<String> ObjectsToKeep)
         {
             try
@@ -410,6 +427,13 @@ namespace aaPkgManager
             }
         }
 
+        /// <summary>
+        /// Remove items from unpacked files based on both XPath and list of objects
+        /// </summary>
+        /// <param name="workingPath"></param>
+        /// <param name="xmanifestDoc"></param>
+        /// <param name="ObjectsToKeep"></param>
+        /// <param name="XPathQuery"></param>
         private void RemoveItemsFromUnpackedFilesByXPath(string workingPath,ref XDocument xmanifestDoc, List<String> ObjectsToKeep, string XPathQuery)
         {
             try
@@ -441,6 +465,11 @@ namespace aaPkgManager
             }
         }
 
+        /// <summary>
+        /// Delete specific gobject file from unnpacked file set
+        /// </summary>
+        /// <param name="workingPath"></param>
+        /// <param name="gObjectID"></param>
         private void DeleteGObjectFiles(string workingPath, string gObjectID)
         {
             try
@@ -511,7 +540,6 @@ namespace aaPkgManager
         //    catch (Exception ex)
         //    {
         //        throw ex;
-        //    }
-                
+        //    }                
     }
 }
